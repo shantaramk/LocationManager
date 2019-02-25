@@ -103,7 +103,6 @@ extension LocationManager {
          }
          }
          alertView.show(animated: true) */
-        UIApplication.shared.open(URL.init(string: UIApplicationOpenSettingsURLString)!, options: [:], completionHandler: nil)
-
+        print("Goto Setting->app->Location->status")
     }
 }

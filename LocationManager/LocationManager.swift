@@ -11,25 +11,26 @@ import Foundation
 import CoreLocation
 class LocationManager: NSObject {
     
-    // MARK: - Properties
+    // MARK: - Internal Properties
     
-    var locationManager: CLLocationManager!
-    var locationHandler: ((CLLocationManager, Error?) -> Void)?
+    static let shared = LocationManager()
+    var locationManager: CLLocationManager = CLLocationManager()
+    var locationHandler: ((CLLocationManager, CLLocation?, Error?) -> Void)?
     
     // MARK: - Init
     
     override init() {
         super.init()
-        self.setupLocationManager()
+        self.checkLocationService()
     }
     
     // MARK: - SetUp
     
     func setupLocationManager() {
-        locationManager = CLLocationManager()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.requestLocation()
+        locationManager.allowsBackgroundLocationUpdates = false
         locationManager.requestAlwaysAuthorization()
     }
     
@@ -39,6 +40,7 @@ class LocationManager: NSObject {
             setupLocationManager()
             if checkLocationAuthorization() {
                 locationManager.startUpdatingLocation()
+            } else {
             }
         } else {
             showLocationSettingPage()
@@ -48,7 +50,6 @@ class LocationManager: NSObject {
     func checkLocationAuthorization() -> Bool {
         switch CLLocationManager.authorizationStatus() {
         case .authorizedWhenInUse:
-            //updateGoogleMapUsingLocation(locationManager.location!)
             return true
         case .denied:
             showLocationSettingPage()
@@ -66,16 +67,15 @@ class LocationManager: NSObject {
 extension LocationManager: CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-    
-        if let location = locations.first {
-            print("Found user's location: \(location)")
+        
+        guard let location = locations.first else {
+            return
         }
-        locationHandler!(manager, nil)
+        locationHandler!(manager, location, nil)
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Failed to find user's location: \(error.localizedDescription)")
-        locationHandler!(manager, error)
+        locationHandler!(manager, nil, error)
     }
     
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
@@ -94,6 +94,8 @@ extension LocationManager: CLLocationManagerDelegate {
 
 extension LocationManager {
     func showLocationSettingPage () {
+        
+        //Refer : https://github.com/shantaramk/Custom-Alert-View
         /*
          let alertView = AlertView(title: LocalizedStrings.locationService, message: LocalizedStrings.locationAccessMessage, okButtonText: LocalizedStrings.gotoSettting, cancelButtonText: AlertMessage.Cancel) { (_, button) in
          if button == .other {
@@ -101,5 +103,7 @@ extension LocationManager {
          }
          }
          alertView.show(animated: true) */
+        UIApplication.shared.open(URL.init(string: UIApplicationOpenSettingsURLString)!, options: [:], completionHandler: nil)
+
     }
 }
